@@ -7,3 +7,4 @@ pydantic-settings>=2.5.0
 pyjwt>=2.9.0
 argon2-cffi>=23.1.0
 python-multipart>=0.0.12
+redis>=5.0.0

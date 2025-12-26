@@ -3,16 +3,37 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlmodel import Session, select
+from pydantic import BaseModel
 
 from app.core.database import get_session
-from app.core.security import get_password_hash
+from app.core.security import (
+    get_password_hash,
+    get_all_blocked_users,
+    unblock_user,
+)
 from app.models.user import User, UserCreate, UserPublic, UserUpdate
 from app.api.deps import CurrentUser, CurrentSuperUser
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
 
-@router.post("/", response_model=UserPublic, status_code=status.HTTP_201_CREATED)
+class BlockedUserInfo(BaseModel):
+    """Schema for blocked user information."""
+    identifier: str
+    reason: str
+    blocked_at: str
+    expires_in_seconds: int
+
+
+class UnblockResponse(BaseModel):
+    """Schema for unblock response."""
+    message: str
+    identifier: str
+
+
+@router.post(
+    "/", response_model=UserPublic, status_code=status.HTTP_201_CREATED
+)
 def create_user(
     *,
     session: Annotated[Session, Depends(get_session)],
@@ -27,7 +48,8 @@ def create_user(
     ).first()
     if existing_email:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered"
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email already registered",
         )
 
     # Check if username already exists
@@ -36,7 +58,8 @@ def create_user(
     ).first()
     if existing_username:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Username already taken"
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Username already taken",
         )
 
     # Create new user with hashed password
@@ -105,7 +128,8 @@ def update_user_me(
         ).first()
         if existing_username:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail="Username already taken"
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Username already taken",
             )
 
     # Update user fields
@@ -113,7 +137,9 @@ def update_user_me(
 
     # Handle password hashing if password is being updated
     if "password" in user_data:
-        user_data["hashed_password"] = get_password_hash(user_data.pop("password"))
+        user_data["hashed_password"] = get_password_hash(
+            user_data.pop("password")
+        )
 
     user_data["updated_at"] = datetime.utcnow()
 
@@ -178,7 +204,8 @@ def update_user(
         ).first()
         if existing_username:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail="Username already taken"
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Username already taken",
             )
 
     # Update user fields
@@ -186,7 +213,9 @@ def update_user(
 
     # Handle password hashing if password is being updated
     if "password" in user_data:
-        user_data["hashed_password"] = get_password_hash(user_data.pop("password"))
+        user_data["hashed_password"] = get_password_hash(
+            user_data.pop("password")
+        )
 
     user_data["updated_at"] = datetime.utcnow()
 
@@ -217,8 +246,44 @@ def delete_user(
     # Prevent self-deletion
     if user.id == current_user.id:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot delete yourself"
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot delete yourself",
         )
 
     session.delete(user)
     session.commit()
+
+
+@router.get("/blocked", response_model=list[BlockedUserInfo])
+async def list_blocked_users(
+    current_user: CurrentSuperUser,
+) -> list[BlockedUserInfo]:
+    """
+    List all currently blocked users (superuser only).
+    
+    Returns information about users who have been temporarily blocked
+    due to failed login attempts or other security reasons.
+    """
+    blocked_users = await get_all_blocked_users()
+    return [BlockedUserInfo(**user) for user in blocked_users]
+
+
+@router.delete("/blocked/{identifier}", response_model=UnblockResponse)
+async def unblock_user_endpoint(
+    identifier: str,
+    current_user: CurrentSuperUser,
+) -> UnblockResponse:
+    """
+    Unblock a user account manually (superuser only).
+    
+    Args:
+        identifier: The email or username of the blocked user
+    
+    This will remove the block and reset login attempts counter.
+    """
+    await unblock_user(identifier)
+    
+    return UnblockResponse(
+        message="User successfully unblocked",
+        identifier=identifier
+    )

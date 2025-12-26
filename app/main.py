@@ -4,6 +4,7 @@ from fastapi import FastAPI
 
 from app.api.routes import auth, items, users
 from app.core.config import settings
+from app.core.redis import close_redis_client
 
 
 @asynccontextmanager
@@ -14,6 +15,7 @@ async def lifespan(app: FastAPI):
     # create_db_and_tables()
     yield
     # Shutdown: cleanup code here if needed
+    await close_redis_client()
 
 
 app = FastAPI(
