@@ -155,116 +155,441 @@ docs/TASK-XXX-descripcion-corta     # Documentación
 
 ---
 
-## 📋 Flujo de Trabajo Completo
+## 📋 Flujo de Trabajo en 3 Fases (Multi-Modelo Manual)
 
-### Fase 1: Obtener y Analizar Tarea
+> **⚠️ IMPORTANTE:** Este flujo está diseñado para que puedas cambiar manualmente el modelo de IA entre fases según tus necesidades.
+> 
+> **Sugerencias de modelos por fase:**
+> - **FASE 1 (Recuperación de Contexto):** Gemini 2.0 Flash Thinking, Claude Sonnet 4.5
+> - **FASE 2 (Planificación):** Claude Opus 4.5, Claude Sonnet 4.5
+> - **FASE 3 (Codificación):** Claude Sonnet 4.5, GPT-4o
+> 
+> 👉 **Cambia el modelo en el dropdown de Chat view ANTES de iniciar cada fase**
+
+---
+
+## 🔍 FASE 1: Recuperación de Contexto desde Notion
+
+**🎯 Objetivo:** Obtener toda la información necesaria de la tarea desde Notion y entender el contexto completo.
+
+**📊 Modelo recomendado:** Gemini 2.0 Flash Thinking (excelente en análisis y razonamiento)
+
+**Pasos a ejecutar:**
+
+### 1.1 Buscar y obtener la tarea
+
+```markdown
+ACCIÓN: Buscar tarea en Notion
+
+Herramientas MCP:
+- notion-search: Buscar tarea por ID o título
+- notion-fetch: Obtener contenido completo de la tarea
+
+Prompt sugerido:
+"Busca en Notion la tarea TASK-XXX y extrae toda la información relevante:
+- Título y descripción completa
+- Criterios de aceptación
+- Dependencias o bloqueadores
+- Archivos mencionados
+- Comentarios importantes
+- Links relacionados"
+```
+
+### 1.2 Analizar el contexto del proyecto
+
+```markdown
+ACCIÓN: Entender el estado actual del código
+
+Herramientas a usar:
+- list_dir: Ver estructura del proyecto
+- read_file: Leer archivos relevantes mencionados
+- grep_search: Buscar código relacionado
+- semantic_search: Buscar contexto similar
+
+Prompt sugerido:
+"Analiza el contexto del proyecto:
+- Estructura de directorios relevante
+- Archivos que serán modificados
+- Código existente relacionado
+- Patrones y convenciones actuales"
+```
+
+### 1.3 Actualizar estado en Notion
+
+```markdown
+ACCIÓN: Marcar tarea como "In Progress"
+
+Herramientas MCP:
+- notion-update-page: Cambiar estado
+- notion-create-comment: Agregar comentario de inicio
+
+Prompt sugerido:
+"Actualiza la tarea en Notion:
+- Cambia estado a 'In Progress'
+- Agrega comentario: 'Iniciado análisis [fecha/hora]'"
+```
+
+### ✅ Output esperado de Fase 1:
+
+- ✓ Documento con análisis completo de la tarea
+- ✓ Lista de archivos a modificar/crear
+- ✓ Identificación de dependencias técnicas
+- ✓ Estado actualizado en Notion
+- ✓ Contexto claro del código existente
+
+**⏸️ PAUSA AQUÍ - Cambia de modelo antes de continuar a Fase 2**
+
+---
+
+## 📐 FASE 2: Creación del Plan de Implementación
+
+**🎯 Objetivo:** Diseñar un plan detallado de implementación consultando documentación actualizada y mejores prácticas.
+
+**📊 Modelo recomendado:** Claude Opus 4.5 (excelente en arquitectura y planificación)
+
+**Pasos a ejecutar:**
+
+### 2.1 Consultar documentación con Context7
+
+```markdown
+ACCIÓN: Obtener documentación actualizada de librerías
+
+Herramientas MCP (OBLIGATORIO):
+- mcp_io_github_ups_resolve-library-id: Para cada librería
+- mcp_io_github_ups_get-library-docs: Obtener docs actualizadas
+
+Prompt sugerido:
+"Para cada librería identificada en Fase 1:
+1. Resuelve el library ID en Context7
+2. Obtén documentación actualizada
+3. Busca ejemplos relevantes al caso de uso
+4. Identifica mejores prácticas de seguridad"
+
+Ejemplo:
+- FastAPI: /fastapi/fastapi
+- SQLModel: /websites/sqlmodel_tiangolo
+- Argon2: /hynek/argon2-cffi
+```
+
+### 2.2 Crear plan de implementación detallado
+
+```markdown
+ACCIÓN: Diseñar plan paso a paso
+
+Herramientas a usar:
+- manage_todo_list: Crear checklist estructurado
+- read_file: Revisar instructions.md del proyecto
+
+Prompt sugerido:
+"Crea un plan de implementación detallado:
+
+1. ANÁLISIS TÉCNICO:
+   - Tecnologías y librerías necesarias
+   - Versiones compatibles
+   - Patrones de diseño a aplicar
+
+2. PASOS DE IMPLEMENTACIÓN (desglosados):
+   - Paso 1: [Descripción específica]
+   - Paso 2: [Descripción específica]
+   - ...
+
+3. ARCHIVOS A MODIFICAR/CREAR:
+   - archivo1.py: [Cambios específicos]
+   - archivo2.py: [Cambios específicos]
+   - ...
+
+4. TESTS NECESARIOS:
+   - Test 1: [Qué validar]
+   - Test 2: [Qué validar]
+
+5. CRITERIOS DE ACEPTACIÓN:
+   - [ ] Criterio 1
+   - [ ] Criterio 2
+   - ...
+
+6. CONSIDERACIONES DE SEGURIDAD:
+   - [Lista de validaciones necesarias]
+
+7. ORDEN DE EJECUCIÓN:
+   - Primera: [Tarea]
+   - Segunda: [Tarea]
+   - ...
+"
+```
+
+### 2.3 Validar plan contra convenciones
+
+```markdown
+ACCIÓN: Verificar adherencia a standards del proyecto
+
+Herramientas a usar:
+- read_file: Leer .github/instructions.md
+- grep_search: Buscar patrones en código existente
+
+Prompt sugerido:
+"Valida el plan contra:
+- Convenciones de código del proyecto (instructions.md)
+- Patrones existentes en el codebase
+- Estándares de seguridad
+- Requisitos de testing
+
+Ajusta el plan si es necesario."
+```
+
+### ✅ Output esperado de Fase 2:
+
+- ✓ Plan de implementación detallado y secuencial
+- ✓ Lista de TODOs en manage_todo_list
+- ✓ Documentación de Context7 consultada y guardada
+- ✓ Validaciones de seguridad identificadas
+- ✓ Plan validado contra convenciones del proyecto
+
+**⏸️ PAUSA AQUÍ - Cambia de modelo antes de continuar a Fase 3**
+
+---
+
+## 💻 FASE 3: Codificación e Implementación
+
+**🎯 Objetivo:** Implementar el código siguiendo el plan, validando en cada paso.
+
+**📊 Modelo recomendado:** Claude Sonnet 4.5 (excelente en codificación precisa)
+
+**Pasos a ejecutar:**
+
+### 3.1 Preparar entorno Git
+
+```markdown
+ACCIÓN: Crear branch para la tarea
+
+Herramientas MCP:
+- create_branch: Crear branch siguiendo convención
+
+Prompt sugerido:
+"Crea branch siguiendo la convención:
+- feature/TASK-XXX-descripcion-corta
+- fix/TASK-XXX-descripcion-corta
+- refactor/TASK-XXX-descripcion-corta
+
+Usa nombres descriptivos en kebab-case, max 50 chars."
+```
+
+### 3.2 Implementar código paso a paso
+
+```markdown
+ACCIÓN: Codificar siguiendo el plan de Fase 2
+
+Herramientas a usar:
+- create_file: Crear nuevos archivos
+- replace_string_in_file: Editar archivos existentes
+- multi_replace_string_in_file: Múltiples edits eficientes
+- get_errors: Validar después de cada cambio
+- manage_todo_list: Marcar progreso
+
+Prompt sugerido:
+"Implementa el plan de Fase 2:
+
+1. Marca TODO como 'in-progress' antes de empezar
+2. Implementa el código del paso actual
+3. Verifica errores con get_errors
+4. Si no hay errores, marca TODO como 'completed'
+5. Continúa con siguiente paso
+
+IMPORTANTE:
+- Sigue exactamente las convenciones de instructions.md
+- Usa type hints en todas las funciones
+- Agrega docstrings cuando sea necesario
+- NO hardcodees credenciales o secretos
+- Valida inputs de usuarios"
+```
+
+### 3.3 Crear migraciones si es necesario
+
+```markdown
+ACCIÓN: Migraciones de base de datos (si aplica)
+
+Herramientas a usar:
+- run_in_terminal: Ejecutar comandos alembic
+
+Prompt sugerido:
+"Si modificaste modelos de BD:
+1. Crea migración: alembic revision --autogenerate -m 'descripcion'
+2. Revisa el archivo de migración generado
+3. Aplica en dev: alembic upgrade head
+4. Verifica que todo funciona"
+```
+
+### 3.4 Ejecutar tests y validaciones
+
+```markdown
+ACCIÓN: Validar implementación completa
+
+Herramientas a usar:
+- run_in_terminal: Ejecutar tests
+- get_errors: Verificar errores finales
+
+Prompt sugerido:
+"Valida la implementación:
+1. Ejecuta tests si existen: pytest
+2. Verifica linting/typing si aplica
+3. Confirma que se cumplen criterios de aceptación
+4. Revisa que no hay errores con get_errors
+5. Prueba manualmente la funcionalidad (si es posible)"
+```
+
+### 3.5 Crear Pull Request
+
+```markdown
+ACCIÓN: Crear PR con toda la documentación
+
+Herramientas MCP:
+- create_pull_request: Crear PR en GitHub
+- notion-update-page: Actualizar estado en Notion
+- notion-create-comment: Agregar link al PR
+
+Prompt sugerido:
+"Crea Pull Request con:
+
+TÍTULO:
+[TASK-XXX] Descripción clara y concisa
+
+DESCRIPCIÓN:
+## 🎯 Tarea
+Link a Notion: [URL]
+
+## 📝 Descripción
+[Resumen de cambios implementados]
+
+## ✅ Criterios de Aceptación
+- [ ] Criterio 1 de Notion
+- [ ] Criterio 2 de Notion
+- [ ] ...
+
+## 🔧 Cambios Técnicos
+- Archivo1: [Cambios]
+- Archivo2: [Cambios]
+
+## 🧪 Testing
+[Cómo probar los cambios]
+
+## 📚 Documentación Context7 Consultada
+- Librería1: [Link]
+- Librería2: [Link]
+
+## 📸 Screenshots (si aplica)
+[Capturas o demos]
+
+Luego:
+1. Actualiza Notion a 'In Review'
+2. Agrega link al PR en comentario de Notion
+3. Resumen de implementación en Notion"
+```
+
+### ✅ Output esperado de Fase 3:
+
+- ✓ Código implementado y funcionando
+- ✓ Tests pasando (si existen)
+- ✓ Pull Request creado con descripción completa
+- ✓ Tarea en Notion actualizada a "In Review"
+- ✓ Link entre GitHub PR y Notion establecido
+- ✓ Sin errores de linting o typing
+
+---
+
+## 📖 EJEMPLO PRÁCTICO: Flujo Completo con Cambio de Modelo
+
+### Ejemplo: "Implementar endpoint de exportación de reportes"
+
+#### **FASE 1: Recuperación de Contexto** 🔍
+**Modelo recomendado: Gemini 2.0 Flash Thinking**
 
 ```
-PASO 1: Buscar tareas pendientes en Notion
-  - Usar mcp_makenotion_no_notion-search con query apropiado
-  - Filtrar por estado "To Do" o tareas asignadas
-  - Priorizar según urgencia/prioridad
+TÚ: "Busca en Notion tareas con 'exportación' en el título que estén en estado 'To Do' 
+y trae los detalles completos de la más prioritaria"
 
-PASO 2: Leer detalles completos
-  - Usar mcp_makenotion_no_notion-fetch para obtener contenido
-  - Extraer información clave:
-    * Título y descripción
-    * Criterios de aceptación
-    * Archivos a modificar/crear
-    * Dependencias o limitaciones
-    * Links relacionados
+GEMINI: [Usa notion-search, notion-fetch]
+- Encuentra: "Implementar exportación de reportes a Excel"
+- Extrae: Criterios de aceptación, especificaciones técnicas, archivos relacionados
+- Resume: "Tarea requiere endpoint FastAPI POST /reports/export con formato Excel usando openpyxl"
+```
 
-PASO 3: Actualizar estado en Notion
-  - Cambiar estado a "In Progress"
-  - Agregar comentario con timestamp de inicio
+⏸️ **PAUSA AQUÍ - Cambia a Claude Opus 4.5**
+
+---
+
+#### **FASE 2: Planificación** 🎯
+**Modelo recomendado: Claude Opus 4.5**
+
+```
+TÚ: "Usa la documentación de FastAPI y openpyxl de Context7 para crear un plan 
+detallado de implementación del endpoint de exportación"
+
+OPUS: [Usa get-library-docs con /fastapi/fastapi y /openpyxl/openpyxl]
+- Consulta: Response streaming, File responses, openpyxl writer
+- Propone:
+  1. Nuevo archivo: app/api/routes/reports.py
+  2. Schema: ReportExportRequest con filtros y formato
+  3. Servicio: ExcelReportGenerator con openpyxl
+  4. Endpoint: POST /reports/export retorna FileResponse
+  5. Tests: test_reports.py con mock de DB
+- Entregables: 5 archivos a crear/modificar, orden de implementación
+```
+
+⏸️ **PAUSA AQUÍ - Cambia a Claude Sonnet 4.5**
+
+---
+
+#### **FASE 3: Implementación** 💻
+**Modelo recomendado: Claude Sonnet 4.5**
+
+```
+TÚ: "Implementa el plan anterior paso a paso. Primero crea el archivo routes/reports.py"
+
+SONNET: [Usa create_file, run_in_terminal, get_errors]
+1. Crea app/api/routes/reports.py con endpoint
+2. Crea app/schemas/report.py con modelos Pydantic
+3. Crea app/services/excel_generator.py con lógica openpyxl
+4. Actualiza app/api/__init__.py para incluir router
+5. Instala dependencia: pip install openpyxl
+6. Ejecuta tests: pytest tests/api/test_reports.py
+7. Valida con get_errors
+
+TÚ: "Crea el PR y actualiza Notion"
+
+SONNET: [Usa create_pull_request, notion-update-page]
+- Crea PR con título: "[TASK-123] Agregar endpoint de exportación de reportes"
+- Descripción completa con links a Notion y Context7
+- Actualiza Notion: Status → "In Review", Link → PR
 ```
 
 ---
 
-### Fase 2: Investigar y Planificar
+### 🎯 Resultado Final del Ejemplo:
 
-```
-PASO 1: Identificar dependencias técnicas
-  - Listar librerías/frameworks necesarios
-  - Identificar versiones actuales en el proyecto
-
-PASO 2: Consultar Context7 (OBLIGATORIO)
-  - Para CADA librería externa:
-    a) Resolver library ID con mcp_io_github_ups_resolve-library-id
-    b) Obtener documentación con mcp_io_github_ups_get-library-docs
-    c) Buscar ejemplos relevantes al caso de uso
-    d) Verificar mejores prácticas de seguridad
-
-PASO 3: Crear plan de implementación
-  - Usar manage_todo_list para crear checklist
-  - Desglosar tarea en pasos concretos y verificables
-  - Identificar orden óptimo de implementación
-  - Considerar necesidad de tests
-```
+✅ **Fase 1 (Gemini):** Contexto completo recuperado en 2 min  
+✅ **Fase 2 (Opus):** Plan técnico detallado en 5 min  
+✅ **Fase 3 (Sonnet):** Código implementado y PR creado en 15 min  
+⏱️ **Tiempo total:** ~22 minutos para tarea completa  
+🔄 **Cambios de modelo:** 2 pausas manuales (entre fases)
 
 ---
 
-### Fase 3: Implementar Código
-
-```
-PASO 1: Preparar entorno Git
-  - Crear branch siguiendo convención de nombres
-  - Usar mcp_io_github_git_create_branch desde main/develop
-
-PASO 2: Implementar cambios
-  - Seguir el plan de TODOs creado
-  - Marcar cada TODO como "in-progress" al iniciarlo
-  - Marcar como "completed" al terminarlo
-  - Verificar errores con get_errors después de cada cambio
-
-PASO 3: Validar implementación
-  - Ejecutar tests si existen
-  - Verificar que no hay errores de linting/typing
-  - Confirmar que se cumplen criterios de aceptación
-```
-
 ---
 
-### Fase 4: Crear Pull Request
+## 🔄 Post-Implementación (Opcional - Mismo modelo de Fase 3)
 
-```
-PASO 1: Preparar PR
-  - Revisar todos los cambios realizados
-  - Asegurar que el código sigue convenciones del proyecto
-  - Verificar que la documentación está actualizada
+### Seguimiento del PR
 
-PASO 2: Crear PR en GitHub
-  - Usar mcp_io_github_git_create_pull_request
-  - Incluir en la descripción:
-    * Link a la tarea de Notion
-    * Resumen de cambios realizados
-    * Checklist de criterios de aceptación
-    * Instrucciones de prueba (si aplica)
-    * Screenshots/demos (si aplica)
+```markdown
+Si hay comentarios de code review:
+1. Revisar comentarios
+2. Aplicar correcciones necesarias
+3. Actualizar PR con explicación
+4. Comentar en Notion si hay cambios significativos
 
-PASO 3: Actualizar Notion
-  - Cambiar estado a "In Review"
-  - Agregar link al PR creado
-  - Comentar resumen de implementación
-```
-
----
-
-### Fase 5: Seguimiento Post-PR
-
-```
-PASO 1: Monitorear revisiones
-  - Revisar comentarios de code review
-  - Responder preguntas o solicitudes de cambios
-
-PASO 2: Aplicar correcciones si es necesario
-  - Crear commits adicionales en la misma rama
-  - Actualizar PR con explicación de cambios
-
-PASO 3: Cierre de tarea
-  - Al hacer merge: Actualizar Notion a "Done"
-  - Agregar comentarios finales o lecciones aprendidas
-  - Cerrar branch si no se hace automáticamente
+Al hacer merge:
+1. Actualizar Notion a "Done"
+2. Agregar comentarios finales o lecciones aprendidas
+3. Verificar que branch se cerró (si no, cerrar manualmente)
 ```
 
 ---
@@ -384,12 +709,47 @@ Closes: [Link a tarea de Notion]
 
 ---
 
+## 🤖 Selección de Modelos por Tarea
+
+### Estado Actual (Diciembre 2025)
+
+VS Code **no soporta nativamente** orquestación multi-modelo por fase de trabajo. Consulta [MULTI-MODEL-WORKFLOW.md](../MULTI-MODEL-WORKFLOW.md) para detalles completos.
+
+**Opciones disponibles:**
+
+1. **Manual:** Usuario cambia modelo en dropdown de Chat view por fase
+2. **Un modelo potente:** Usar Claude Sonnet 4.5 o Gemini 2.0 para todo el flujo
+3. **Extensión custom:** Desarrollar chat participants especializados por tarea
+4. **Script externo:** Orquestación fuera de VS Code con APIs directas
+
+### Configuración Recomendada
+
+**Enfoque pragmático actual:**
+
+```markdown
+# Seleccionar UN modelo para toda la sesión:
+- Claude Sonnet 4.5 (recomendado): Excelente en análisis, plan Y código
+- Gemini 2.0 Flash Thinking: Rápido y capaz en múltiples dominios
+
+# Estructurar prompts en fases dentro del mismo modelo:
+1. Fase de análisis: "Analiza esta tarea en detalle..."
+2. Fase de planificación: "Basándote en el análisis, crea plan..."
+3. Fase de implementación: "Siguiendo el plan, implementa..."
+```
+
+**Si necesitas absolutamente diferentes modelos:**
+- Cambia manualmente el modelo antes de cada fase
+- O desarrolla extensión con chat participants especializados
+
+---
+
 ## 📚 Referencias Útiles
 
 - **Context7 MCP**: Para documentación actualizada de librerías
 - **Notion MCP Docs**: https://developers.notion.com/docs/mcp-supported-tools
 - **GitHub MCP Server**: https://github.com/github/github-mcp-server
 - **GitHub MCP Toolsets**: Ver tabla completa en README del servidor oficial
+- **Multi-Model Workflow**: Ver [MULTI-MODEL-WORKFLOW.md](../MULTI-MODEL-WORKFLOW.md)
 - **Convenciones específicas**: Ver `instructions.md` del proyecto
 
 ### Instalación de servidores MCP
