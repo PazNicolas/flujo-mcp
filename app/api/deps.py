@@ -19,7 +19,7 @@ SessionDep = Annotated[Session, Depends(get_session)]
 TokenDep = Annotated[str, Depends(oauth2_scheme)]
 
 
-def get_current_user(session: SessionDep, token: TokenDep) -> User:
+async def get_current_user(session: SessionDep, token: TokenDep) -> User:
     """
     Get the current authenticated user from JWT token.
 
@@ -31,8 +31,10 @@ def get_current_user(session: SessionDep, token: TokenDep) -> User:
         Current authenticated user
 
     Raises:
-        HTTPException: If token is invalid or user not found
+        HTTPException: If token is invalid, blacklisted, or user not found
     """
+    from app.core.security import is_token_blacklisted
+    
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -47,11 +49,21 @@ def get_current_user(session: SessionDep, token: TokenDep) -> User:
 
         if token_data.sub is None:
             raise credentials_exception
+        
+        # Check if token is blacklisted
+        if token_data.jti and await is_token_blacklisted(token_data.jti):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token has been revoked",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
 
     except (jwt.PyJWTError, ValidationError):
         raise credentials_exception
 
-    user = session.exec(select(User).where(User.id == int(token_data.sub))).first()
+    user = session.exec(
+        select(User).where(User.id == int(token_data.sub))
+    ).first()
 
     if user is None:
         raise credentials_exception
