@@ -1,8 +1,12 @@
-# Instrucciones para Agentes de IA - Flujo MCP
+# Instrucciones del Proyecto - Flujo MCP
+
+> **Lee también**: [MCP-Notion.agent.md](./MCP-Notion.agent.md) - Flujo de trabajo estándar con MCPs (aplica a todos los proyectos de la organización)
+
+---
 
 ## 🎯 Propósito del Proyecto
 
-Este proyecto es una aplicación FastAPI que sirve como banco de pruebas para flujos de trabajo automatizados usando Model Context Protocol (MCP). El objetivo es demostrar cómo los agentes de IA pueden:
+Este proyecto es una aplicación FastAPI que sirve como **banco de pruebas** para flujos de trabajo automatizados usando Model Context Protocol (MCP). El objetivo es demostrar cómo los agentes de IA pueden:
 
 1. Obtener requerimientos desde Notion
 2. Implementar código de forma autónoma
@@ -11,101 +15,68 @@ Este proyecto es una aplicación FastAPI que sirve como banco de pruebas para fl
 
 ---
 
-## 🔧 MCPs Disponibles y Su Uso
+## 🏗️ Stack Tecnológico
 
-### 1. Context7 (OBLIGATORIO)
+### Backend
+- **Framework**: FastAPI 0.115+
+- **ORM**: SQLModel 0.0.22+
+- **Base de datos**: PostgreSQL con psycopg2-binary
+- **Migraciones**: Alembic 1.14+
+- **Servidor**: Uvicorn con extras standard
 
-**Siempre usar Context7 antes de implementar cualquier código.**
+### Seguridad
+- **Autenticación**: JWT con PyJWT 2.9+
+- **Hashing de contraseñas**: Argon2id via argon2-cffi 23.1+
+- **Validación**: Pydantic (incluido en FastAPI)
 
-```
-Antes de escribir código, SIEMPRE:
-1. Resolver el library ID: mcp_io_github_ups_resolve-library-id
-2. Obtener documentación: mcp_io_github_ups_get-library-docs
-```
-
-**Librerías principales del proyecto:**
-- `/fastapi/fastapi` - Framework web
-- `/websites/sqlmodel_tiangolo` - ORM y modelos
-- `/sqlalchemy/alembic` - Migraciones de base de datos
-- `/hynek/argon2-cffi` - Hashing de contraseñas
-
-### 2. Notion MCP
-
-**Uso:** Gestión de tareas, requerimientos y documentación.
-
-**Funciones principales:**
-- `mcp_notion_search` - Buscar páginas y bases de datos
-- `mcp_notion_get_page` - Obtener contenido de una página
-- `mcp_notion_get_database` - Obtener items de una base de datos
-- `mcp_notion_create_page` - Crear nuevas páginas
-- `mcp_notion_update_page` - Actualizar páginas existentes
-
-**Flujo de trabajo con Notion:**
-1. Buscar la base de datos de tareas/tickets
-2. Filtrar por estado (To Do, In Progress, etc.)
-3. Obtener detalles de la tarea asignada
-4. Actualizar estado cuando se inicie/complete
-
-### 3. GitHub MCP
-
-**Uso:** Gestión de código, branches y Pull Requests.
-
-**Funciones principales:**
-- `mcp_github_create_branch` - Crear rama para la tarea
-- `mcp_github_create_or_update_file` - Crear/modificar archivos
-- `mcp_github_create_pull_request` - Crear PR
-- `mcp_github_get_file_contents` - Leer archivos del repo
-- `mcp_github_push_files` - Subir múltiples archivos
-
-**Convención de ramas:**
-- Features: `feature/TASK-XXX-descripcion-corta`
-- Bugfixes: `fix/TASK-XXX-descripcion-corta`
-- Hotfixes: `hotfix/TASK-XXX-descripcion-corta`
+### Utilidades
+- **Settings**: pydantic-settings 2.5+
+- **Forms**: python-multipart (para OAuth2PasswordRequestForm)
 
 ---
 
-## 📋 Flujo de Trabajo del Agente
+## 📚 Context7 Library IDs del Proyecto
 
-### Paso 1: Obtener Tarea de Notion
-```
-1. Buscar en la base de datos de tareas
-2. Identificar tareas con estado "To Do" o asignadas
-3. Leer los detalles completos de la tarea
-4. Extraer: título, descripción, criterios de aceptación, archivos afectados
-```
+**⚠️ Consulta estas librerías en Context7 ANTES de implementar código:**
 
-### Paso 2: Investigar con Context7
-```
-1. Identificar librerías/frameworks necesarios
-2. Buscar documentación actualizada en Context7
-3. Revisar ejemplos de código relevantes
-4. Verificar mejores prácticas actuales
-```
+| Librería | Context7 ID | Uso |
+|----------|-------------|-----|
+| FastAPI | `/fastapi/fastapi` | Framework web, routing, validación |
+| SQLModel | `/websites/sqlmodel_tiangolo` | ORM, modelos de base de datos |
+| Alembic | `/sqlalchemy/alembic` | Migraciones de esquema de BD |
+| Argon2 | `/hynek/argon2-cffi` | Hashing seguro de contraseñas |
+| Pydantic | `/pydantic/pydantic` | Validación y schemas |
+| PyJWT | - | Tokens JWT (consultar docs oficiales) |
 
-### Paso 3: Planificar Implementación
-```
-1. Crear lista de TODOs con manage_todo_list
-2. Identificar archivos a crear/modificar
-3. Determinar orden de implementación
-4. Considerar tests necesarios
-```
+---
 
-### Paso 4: Implementar Código
-```
-1. Crear rama en GitHub (si aplica)
-2. Implementar cambios siguiendo los TODOs
-3. Verificar errores con get_errors
-4. Ejecutar tests si existen
-```
+## � Estructura del Proyecto
 
-### Paso 5: Crear Pull Request
 ```
-1. Usar GitHub MCP para crear PR
-2. Incluir:
-   - Referencia a la tarea de Notion
-   - Descripción de cambios
-   - Checklist de criterios de aceptación
-3. Actualizar estado en Notion a "In Review"
+flujo-mcp/
+├── app/
+│   ├── api/
+│   │   ├── deps.py           # Dependencias compartidas (CurrentUser, etc.)
+│   │   └── routes/           # Endpoints de la API
+│   │       ├── auth.py       # Login, logout, /me
+│   │       ├── items.py      # CRUD de items (ejemplo)
+│   │       └── users.py      # CRUD de usuarios
+│   ├── core/
+│   │   ├── config.py         # Settings con pydantic-settings
+│   │   ├── database.py       # Conexión SQLModel/PostgreSQL
+│   │   └── security.py       # Argon2, JWT, funciones de auth
+│   ├── models/               # Modelos SQLModel (tablas)
+│   │   ├── user.py           
+│   │   └── item.py
+│   ├── schemas/              # Schemas Pydantic (request/response)
+│   │   └── token.py
+│   └── main.py               # App FastAPI principal
+├── alembic/
+│   └── versions/             # Migraciones de BD
+├── .env                      # Variables de entorno (NO COMMITEAR)
+├── alembic.ini              
+├── requirements.txt
+└── README.md
 ```
 
 ---
@@ -113,36 +84,361 @@ Antes de escribir código, SIEMPRE:
 ## 📝 Convenciones de Código
 
 ### Python
-- **Formateo:** Black, líneas de 88 caracteres
-- **Imports:** isort, agrupados por stdlib/third-party/local
-- **Typing:** Usar type hints en todas las funciones
-- **Docstrings:** Google style
 
-### API Endpoints
-- **Verbos REST:** GET (leer), POST (crear), PATCH (actualizar), DELETE (eliminar)
-- **Respuestas:** Usar response_model para validación
-- **Errores:** HTTPException con códigos apropiados
+#### Estilo General
+- **Formateo**: Black (líneas de 88 caracteres)
+- **Imports**: Organización con isort
+  ```python
+  # 1. Standard library
+  from datetime import datetime
+  from typing import Annotated
+  
+  # 2. Third-party
+  from fastapi import APIRouter, Depends
+  from sqlmodel import Session, select
+  
+  # 3. Local
+  from app.core.database import get_session
+  from app.models.user import User
+  ```
+- **Type hints**: Obligatorios en todas las funciones públicas
+- **Docstrings**: Google style para funciones y clases complejas
+
+#### Ejemplo de Función
+```python
+def create_access_token(
+    subject: str | Any, expires_delta: timedelta | None = None
+) -> str:
+    """
+    Create a JWT access token.
+
+    Args:
+        subject: The subject of the token (usually user id or email)
+        expires_delta: Optional custom expiration time
+
+    Returns:
+        Encoded JWT token string
+    """
+    # Implementation...
+```
+
+### FastAPI - Endpoints
+
+#### Estructura de Router
+```python
+from fastapi import APIRouter
+
+router = APIRouter(prefix="/resource", tags=["Resource"])
+
+@router.get("/", response_model=list[ResourceRead])
+def list_resources(session: SessionDep) -> list[Resource]:
+    """List all resources."""
+    pass
+
+@router.post("/", response_model=ResourceRead, status_code=201)
+def create_resource(
+    session: SessionDep, 
+    resource_in: ResourceCreate
+) -> Resource:
+    """Create a new resource."""
+    pass
+```
+
+#### Verbos HTTP
+- **GET**: Lectura (no modifica datos)
+- **POST**: Creación de recursos
+- **PATCH**: Actualización parcial
+- **PUT**: Reemplazo completo (usar con precaución)
+- **DELETE**: Eliminación
+
+#### Manejo de Errores
+```python
+from fastapi import HTTPException, status
+
+# 400 - Bad Request
+raise HTTPException(
+    status_code=status.HTTP_400_BAD_REQUEST,
+    detail="Invalid input data"
+)
+
+# 401 - Unauthorized
+raise HTTPException(
+    status_code=status.HTTP_401_UNAUTHORIZED,
+    detail="Could not validate credentials",
+    headers={"WWW-Authenticate": "Bearer"},
+)
+
+# 404 - Not Found
+raise HTTPException(
+    status_code=status.HTTP_404_NOT_FOUND,
+    detail="Resource not found"
+)
+
+# 409 - Conflict
+raise HTTPException(
+    status_code=status.HTTP_409_CONFLICT,
+    detail="Resource already exists"
+)
+```
+
+### SQLModel - Base de Datos
+
+#### Modelos de Tabla
+```python
+from sqlmodel import SQLModel, Field
+from datetime import datetime
+
+class User(SQLModel, table=True):
+    """User database model."""
+    __tablename__ = "users"
+    
+    id: int | None = Field(default=None, primary_key=True)
+    email: str = Field(unique=True, index=True)
+    username: str = Field(unique=True, index=True)
+    hashed_password: str
+    is_active: bool = Field(default=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+```
+
+#### Schemas de Request/Response
+```python
+# Separate from table models!
+class UserCreate(SQLModel):
+    """Schema for creating a user."""
+    email: str
+    username: str
+    password: str
+
+class UserRead(SQLModel):
+    """Schema for reading a user (no password!)."""
+    id: int
+    email: str
+    username: str
+    is_active: bool
+```
+
+#### Migraciones con Alembic
+
+**⚠️ NUNCA modificar la BD directamente - SIEMPRE usar migraciones**
+
+```bash
+# Crear nueva migración
+alembic revision --autogenerate -m "Add column to users table"
+
+# Aplicar migraciones
+alembic upgrade head
+
+# Revertir última migración
+alembic downgrade -1
+```
+
+**Reglas:**
+1. Revisar el archivo de migración generado antes de aplicar
+2. Probar migraciones en desarrollo antes de producción
+3. Nombrar migraciones descriptivamente
+4. No editar migraciones ya aplicadas en producción
+
+---
+
+## ⚠️ Reglas Específicas del Proyecto
+
+### Seguridad
+
+#### Autenticación
+- **Hashing de passwords**: Usar SOLO Argon2id (ya configurado)
+  ```python
+  from app.core.security import get_password_hash, verify_password
+  
+  # Hash al crear usuario
+  hashed = get_password_hash(plain_password)
+  
+  # Verificar en login
+  is_valid = verify_password(plain_password, hashed)
+  ```
+
+- **JWT Tokens**: Configuración en `.env`
+  ```
+  SECRET_KEY=your-secret-key-here  # Generar con openssl rand -hex 32
+  ACCESS_TOKEN_EXPIRE_MINUTES=30
+  ALGORITHM=HS256
+  ```
+
+#### Variables Sensibles
+**NUNCA commitear:**
+- Passwords de BD
+- SECRET_KEY de JWT
+- API keys externas
+- Credenciales de terceros
+
+**Usar `.env` y cargar con pydantic-settings:**
+```python
+# app/core/config.py
+from pydantic_settings import BaseSettings
+
+class Settings(BaseSettings):
+    DATABASE_URL: str
+    SECRET_KEY: str
+    
+    class Config:
+        env_file = ".env"
+
+settings = Settings()
+```
+
+### Testing
+
+#### Estructura de Tests (futuro)
+```
+tests/
+├── test_api/
+│   ├── test_auth.py
+│   ├── test_users.py
+│   └── test_items.py
+├── test_models/
+└── conftest.py
+```
+
+#### Ejecutar Tests
+```bash
+# Cuando se implementen
+pytest
+pytest -v  # Verbose
+pytest tests/test_api/test_auth.py  # Archivo específico
+```
+
+---
+
+## 🔐 Seguridad - Implementación Actual
+
+### Argon2id para Passwords
+
+**Configuración actual** (en `app/core/security.py`):
+```python
+from argon2 import PasswordHasher
+
+ph = PasswordHasher()  # Usa defaults seguros
+```
+
+**Defaults actuales:**
+- `time_cost=3` (iteraciones)
+- `memory_cost=65536` (64 MB)
+- `parallelism=4` (threads)
+- Algoritmo: **Argon2id** (recomendado)
+
+**NO modificar** estos parámetros sin consultar Context7 primero.
+
+### JWT Bearer Tokens
+
+**Flujo:**
+1. Usuario hace POST `/auth/login` con username + password
+2. Backend valida credenciales
+3. Retorna JWT token con expiración
+4. Cliente incluye token en header: `Authorization: Bearer <token>`
+5. Endpoint protegidos verifican token con `CurrentUser` dependency
+
+---
+
+
+## 🚀 Comandos Útiles
+
+### Desarrollo Local
+
+```bash
+# Instalar dependencias
+pip install -r requirements.txt
+
+# Ejecutar servidor de desarrollo
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
+# Crear superusuario
+python create_superuser.py
+```
 
 ### Base de Datos
-- **Migraciones:** Siempre usar Alembic, nunca modificar DB directamente
-- **Modelos:** Separar modelos de tabla de schemas de request/response
+
+```bash
+# Crear migración
+alembic revision --autogenerate -m "Description"
+
+# Aplicar migraciones
+alembic upgrade head
+
+# Ver historial
+alembic history
+
+# Revertir
+alembic downgrade -1
+```
+
+### Testing (cuando se implemente)
+
+```bash
+# Ejecutar todos los tests
+pytest
+
+# Con coverage
+pytest --cov=app --cov-report=html
+
+# Solo un módulo
+pytest tests/test_api/test_auth.py -v
+```
 
 ---
 
-## ⚠️ Reglas Importantes
+## 📦 Dependencias del Proyecto
 
-1. **SIEMPRE consultar Context7** antes de implementar código con librerías
-2. **NUNCA hardcodear** credenciales o secretos
-3. **SIEMPRE crear migraciones** para cambios en modelos de DB
-4. **SIEMPRE verificar errores** después de editar archivos
-5. **Documentar** funciones y endpoints complejos
-6. **Actualizar Notion** con el progreso de la tarea
+Ver `requirements.txt` para versiones exactas:
+
+**Core:**
+- fastapi>=0.115.0
+- uvicorn[standard]>=0.30.0
+- sqlmodel>=0.0.22
+- psycopg2-binary>=2.9.9
+
+**Seguridad:**
+- argon2-cffi>=23.1.0
+- pyjwt>=2.9.0
+
+**Database:**
+- alembic>=1.14.0
+
+**Utilidades:**
+- pydantic-settings>=2.5.0
+- python-multipart>=0.0.12
 
 ---
 
-## 🔐 Seguridad
+## 🤝 Colaboración
 
-- Passwords hasheados con Argon2id
-- Autenticación via JWT Bearer tokens
-- Variables sensibles en `.env` (no commitear)
-- Validación de inputs con Pydantic
+### Antes de Implementar
+1. ✅ Leer [MCP-Notion.agent.md](./MCP-Notion.agent.md) - Flujo de trabajo
+2. ✅ Obtener tarea de Notion
+3. ✅ Consultar Context7 para librerías relevantes
+4. ✅ Crear plan con `manage_todo_list`
+
+### Durante Implementación
+1. ✅ Seguir convenciones de código de este archivo
+2. ✅ Verificar errores frecuentemente con `get_errors`
+3. ✅ Actualizar Notion con progreso
+4. ✅ Crear migraciones para cambios de BD
+
+### Al Finalizar
+1. ✅ Crear PR siguiendo template de MCP-Notion.agent.md
+2. ✅ Referenciar tarea de Notion
+3. ✅ Incluir checklist de criterios de aceptación
+4. ✅ Actualizar estado en Notion a "In Review"
+
+---
+
+## 📚 Referencias
+
+- **FastAPI Docs**: https://fastapi.tiangolo.com
+- **SQLModel Docs**: https://sqlmodel.tiangolo.com
+- **Alembic Docs**: https://alembic.sqlalchemy.org
+- **Argon2-cffi Docs**: https://argon2-cffi.readthedocs.io
+- **Context7**: Usar MCP para documentación actualizada
+
+---
+
+> **Recuerda**: Este archivo contiene reglas **específicas del proyecto**. Para el flujo de trabajo con MCPs (Notion, GitHub, Context7), consulta [MCP-Notion.agent.md](./MCP-Notion.agent.md).
+
