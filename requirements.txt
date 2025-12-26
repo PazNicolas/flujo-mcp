@@ -1,0 +1,9 @@
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+sqlmodel>=0.0.22
+alembic>=1.14.0
+psycopg2-binary>=2.9.9
+pydantic-settings>=2.5.0
+pyjwt>=2.9.0
+argon2-cffi>=23.1.0
+python-multipart>=0.0.12
