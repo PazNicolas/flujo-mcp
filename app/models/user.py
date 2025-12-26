@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import Optional
 
 from sqlmodel import Field, SQLModel
 
@@ -48,5 +47,3 @@ class UserPublic(UserBase):
     """Schema for public user data (without password)."""
 
     id: int
-    created_at: datetime
-    updated_at: datetime
