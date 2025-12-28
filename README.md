@@ -1,6 +1,24 @@
-# Flujo-MCP API
+# Flujo-MCP: API con Integración MCP
 
-Aplicación FastAPI con SQLModel, Alembic y autenticación JWT.
+## 🎯 Descripción del Proyecto
+
+**Flujo-MCP** es una aplicación FastAPI moderna que integra SQLModel, Alembic y autenticación JWT. Este proyecto es una **prueba de concepto de integración de MCP (Model Context Protocol) con programación agéntica**, demostrando cómo los agentes de IA pueden interactuar con sistemas backend robustos y APIs RESTful.
+
+### 🤖 Características de la Integración MCP
+
+Este proyecto demuestra:
+- **Programación Agéntica**: Desarrollo asistido por IA usando MCP para crear una API completa
+- **Model Context Protocol**: Integración de herramientas de contexto para comunicación entre agentes y sistemas
+- **Desarrollo Moderno**: Stack completo con FastAPI, PostgreSQL, y arquitectura limpia
+- **Automatización**: Migraciones de base de datos, autenticación JWT, y gestión de usuarios
+
+### 🚀 Tecnologías Principales
+
+- **FastAPI**: Framework web moderno y de alto rendimiento
+- **SQLModel**: ORM con integración Pydantic para validación de datos
+- **Alembic**: Gestión de migraciones de base de datos
+- **JWT Authentication**: Autenticación segura basada en tokens
+- **PostgreSQL**: Base de datos relacional robusta
 
 ## Requisitos
 
