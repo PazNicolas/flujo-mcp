@@ -65,21 +65,28 @@ Antes de escribir código, SIEMPRE:
 **Flujo de trabajo con Notion:**
 
 1. **Búsqueda de tareas:**
-   - Buscar la base de datos de tareas/tickets del proyecto
-   - Usar filtros por estado (To Do, In Progress, Blocked)
+   - Usar notion-search para buscar la base de datos de tareas/tickets del proyecto
+   - Aplicar filtros por estado (To Do, In Progress, Blocked)
    - Identificar tareas asignadas o priorizadas
+   - ⚠️ Si la búsqueda falla, reportar: "Error en notion-search: [mensaje]"
 
 2. **Obtención de detalles:**
+   - Usar notion-fetch con el page_id obtenido de la búsqueda
    - Leer descripción completa de la tarea
    - Extraer criterios de aceptación
    - Identificar dependencias o archivos relacionados
    - Revisar comentarios y contexto adicional
+   - ⚠️ Si notion-fetch falla, reportar: "No se pudo acceder a la tarea: [mensaje]"
+   - ⚠️ NUNCA intentar acceder directamente a URLs de Notion
 
 3. **Actualización de estado:**
-   - Al iniciar: Cambiar estado a "In Progress"
-   - Durante desarrollo: Actualizar con comentarios de progreso
-   - Al completar: Cambiar a "In Review" o "Done"
-   - En caso de bloqueos: Marcar como "Blocked" con razón
+   - Obtener page_id mediante notion-fetch si no se tiene
+   - Al iniciar: Usar notion-update-page para cambiar estado a "In Progress"
+   - Durante desarrollo: Usar notion-create-comment para actualizar progreso
+   - Al completar: Usar notion-update-page para cambiar a "In Review" o "Done"
+   - En caso de bloqueos: Usar notion-update-page para marcar como "Blocked" y notion-create-comment para explicar
+   - ⚠️ Si cualquier operación falla, informar: "Error al actualizar Notion: [herramienta] - [mensaje]"
+   - ⚠️ Continuar con el trabajo aunque Notion falle, pero siempre reportar el error
 
 **⚠️ Límites de Rate:**
 - General: 180 requests/minuto (3 req/segundo)
@@ -185,14 +192,23 @@ Herramientas MCP:
 - notion-search: Buscar tarea por ID o título
 - notion-fetch: Obtener contenido completo de la tarea
 
+⚠️ IMPORTANTE:
+- SIEMPRE usar notion-fetch con el ID de la página de Notion
+- NUNCA intentar acceder directamente a URLs de Notion
+- Si notion-fetch falla, informar el error inmediatamente al usuario
+- No intentar métodos alternativos de acceso
+
 Prompt sugerido:
-"Busca en Notion la tarea TASK-XXX y extrae toda la información relevante:
+"Busca en Notion la tarea TASK-XXX usando notion-search.
+Una vez encontrada, usa notion-fetch con el ID de la página para obtener:
 - Título y descripción completa
 - Criterios de aceptación
 - Dependencias o bloqueadores
 - Archivos mencionados
 - Comentarios importantes
-- Links relacionados"
+- Links relacionados
+
+Si el MCP falla en cualquier paso, reportar el error específico."
 ```
 
 ### 1.2 Analizar el contexto del proyecto
@@ -220,13 +236,21 @@ Prompt sugerido:
 ACCIÓN: Marcar tarea como "In Progress"
 
 Herramientas MCP:
-- notion-update-page: Cambiar estado
-- notion-create-comment: Agregar comentario de inicio
+- notion-update-page: Cambiar estado (requiere ID de página)
+- notion-create-comment: Agregar comentario de inicio (requiere page_id)
+
+⚠️ IMPORTANTE:
+- SIEMPRE usar el ID de página obtenido de notion-fetch
+- NUNCA extraer IDs manualmente de URLs
+- Si notion-update-page o notion-create-comment fallan, reportar el error
+- Validar que el cambio de estado fue exitoso
 
 Prompt sugerido:
-"Actualiza la tarea en Notion:
-- Cambia estado a 'In Progress'
-- Agrega comentario: 'Iniciado análisis [fecha/hora]'"
+"Usando el ID de página obtenido anteriormente con notion-fetch:
+1. Usa notion-update-page para cambiar el estado a 'In Progress'
+2. Usa notion-create-comment para agregar: 'Iniciado análisis [fecha/hora]'
+3. Si alguna operación falla, reportar el error específico del MCP
+4. Confirmar que los cambios se aplicaron correctamente"
 ```
 
 ### ✅ Output esperado de Fase 1:
@@ -443,8 +467,14 @@ ACCIÓN: Crear PR con toda la documentación
 
 Herramientas MCP:
 - create_pull_request: Crear PR en GitHub
-- notion-update-page: Actualizar estado en Notion
-- notion-create-comment: Agregar link al PR
+- notion-update-page: Actualizar estado en Notion (requiere page_id)
+- notion-create-comment: Agregar link al PR (requiere page_id)
+
+⚠️ IMPORTANTE:
+- SIEMPRE usar notion-fetch primero para obtener el ID correcto de la página
+- NUNCA intentar actualizar Notion usando URLs directamente
+- Si notion-update-page falla, reportar el error y continuar con el PR
+- Si notion-create-comment falla, informar pero no bloquear el proceso
 
 Prompt sugerido:
 "Crea Pull Request con:
@@ -454,7 +484,7 @@ TÍTULO:
 
 DESCRIPCIÓN:
 ## 🎯 Tarea
-Link a Notion: [URL]
+Link a Notion: [URL] (solo para referencia visual, no para acceso programático)
 
 ## 📝 Descripción
 [Resumen de cambios implementados]
@@ -478,10 +508,12 @@ Link a Notion: [URL]
 ## 📸 Screenshots (si aplica)
 [Capturas o demos]
 
-Luego:
-1. Actualiza Notion a 'In Review'
-2. Agrega link al PR en comentario de Notion
-3. Resumen de implementación en Notion"
+Luego, usando el page_id obtenido de notion-fetch:
+1. Usa notion-update-page para cambiar estado a 'In Review'
+   - Si falla, reportar: 'Error al actualizar estado en Notion: [mensaje de error]'
+2. Usa notion-create-comment para agregar link al PR
+   - Si falla, reportar: 'Error al crear comentario en Notion: [mensaje de error]'
+3. Confirma qué operaciones fueron exitosas y cuáles fallaron"
 ```
 
 ### ✅ Output esperado de Fase 3:
@@ -506,10 +538,14 @@ Luego:
 TÚ: "Busca en Notion tareas con 'exportación' en el título que estén en estado 'To Do' 
 y trae los detalles completos de la más prioritaria"
 
-GEMINI: [Usa notion-search, notion-fetch]
-- Encuentra: "Implementar exportación de reportes a Excel"
-- Extrae: Criterios de aceptación, especificaciones técnicas, archivos relacionados
-- Resume: "Tarea requiere endpoint FastAPI POST /reports/export con formato Excel usando openpyxl"
+GEMINI: 
+1. Usa notion-search con query "exportación status:To Do"
+2. Usa notion-fetch para obtener detalles completos de la tarea más prioritaria
+   - Si notion-fetch falla: "Error al acceder a Notion: [mensaje]"
+3. Si todo es exitoso:
+   - Encuentra: "Implementar exportación de reportes a Excel"
+   - Extrae: Criterios de aceptación, especificaciones técnicas, archivos relacionados
+   - Resume: "Tarea requiere endpoint FastAPI POST /reports/export con formato Excel usando openpyxl"
 ```
 
 ⏸️ **PAUSA AQUÍ - Cambia a Claude Opus 4.5**
@@ -544,7 +580,7 @@ OPUS: [Usa get-library-docs con /fastapi/fastapi y /openpyxl/openpyxl]
 ```
 TÚ: "Implementa el plan anterior paso a paso. Primero crea el archivo routes/reports.py"
 
-SONNET: [Usa create_file, run_in_terminal, get_errors]
+SONNET: 
 1. Crea app/api/routes/reports.py con endpoint
 2. Crea app/schemas/report.py con modelos Pydantic
 3. Crea app/services/excel_generator.py con lógica openpyxl
@@ -555,10 +591,15 @@ SONNET: [Usa create_file, run_in_terminal, get_errors]
 
 TÚ: "Crea el PR y actualiza Notion"
 
-SONNET: [Usa create_pull_request, notion-update-page]
-- Crea PR con título: "[TASK-123] Agregar endpoint de exportación de reportes"
-- Descripción completa con links a Notion y Context7
-- Actualiza Notion: Status → "In Review", Link → PR
+SONNET: 
+1. Usa create_pull_request con descripción completa
+2. Usa notion-fetch para obtener el page_id de la tarea
+   - Si falla: "No se pudo obtener información de Notion: [mensaje]"
+3. Usa notion-update-page para cambiar Status → "In Review"
+   - Si falla: "PR creado exitosamente, pero no se pudo actualizar Notion: [mensaje]"
+4. Usa notion-create-comment para agregar Link → PR
+   - Si falla: "PR creado pero comentario no pudo ser agregado: [mensaje]"
+5. Reporta estado final: qué operaciones fueron exitosas y cuáles fallaron
 ```
 
 ---
@@ -612,14 +653,17 @@ Al hacer merge:
 9. ✅ **PRs con contexto completo**: descripción, testing, referencias
 
 ### Notion
-10. ✅ **ACTUALIZAR estado** de tareas en tiempo real
-11. ✅ **DOCUMENTAR bloqueos** inmediatamente cuando ocurran
-12. ✅ **AGREGAR links** entre Notion y GitHub para trazabilidad
+10. ✅ **ACTUALIZAR estado** de tareas usando notion-update-page con page_id
+11. ✅ **DOCUMENTAR bloqueos** usando notion-create-comment inmediatamente
+12. ✅ **AGREGAR links** entre Notion y GitHub usando notion-create-comment
+13. ✅ **NUNCA acceder URLs directamente** - siempre usar herramientas MCP
+14. ✅ **REPORTAR errores MCP** inmediatamente si notion-fetch, notion-update-page o notion-create-comment fallan
+15. ✅ **OBTENER page_id con notion-fetch** antes de cualquier operación de actualización
 
 ### Calidad de Código
-13. ✅ **VERIFICAR errores** después de cada cambio con get_errors
-14. ✅ **SEGUIR convenciones** definidas en instructions.md del proyecto
-15. ✅ **EJECUTAR tests** antes de crear PR (si existen)
+16. ✅ **VERIFICAR errores** después de cada cambio con get_errors
+17. ✅ **SEGUIR convenciones** definidas en instructions.md del proyecto
+18. ✅ **EJECUTAR tests** antes de crear PR (si existen)
 
 ---
 
@@ -686,9 +730,12 @@ Closes: [Link a tarea de Notion]
 - **Guarda referencias**: Anota los links de documentación usados para el PR
 
 ### Para Notion
-- **Actualiza frecuentemente**: No esperes al final del día
+- **Actualiza frecuentemente**: No esperes al final del día, usa notion-update-page regularmente
 - **Sé específico**: Los comentarios vagos no ayudan al equipo
-- **Marca bloqueos ASAP**: Si algo te detiene, escálalo inmediatamente
+- **Marca bloqueos ASAP**: Si algo te detiene, escálalo inmediatamente con notion-create-comment
+- **Siempre usa MCP**: Nunca intentes acceder URLs de Notion directamente
+- **Maneja errores**: Si el MCP falla, reporta el error específico al usuario
+- **Obtén page_id primero**: Usa notion-fetch antes de cualquier operación de actualización
 
 ### Para GitHub
 - **Commits atómicos**: Un commit = un cambio lógico
@@ -706,6 +753,9 @@ Closes: [Link a tarea de Notion]
 ❌ **NO asumir que la documentación de hace 6 meses sigue vigente**
 ❌ **NO ignorar errores de linting o typing**
 ❌ **NO crear branches con nombres genéricos (fix, test, etc.)**
+❌ **NO intentar acceder URLs de Notion directamente sin MCP**
+❌ **NO ignorar errores del MCP de Notion - siempre reportarlos**
+❌ **NO actualizar Notion sin primero obtener el page_id con notion-fetch**
 
 ---
 
@@ -773,9 +823,11 @@ Usuario: "Busca todas las tareas de alta prioridad y créame un resumen"
 
 Agente:
 1. notion-search: query="alta prioridad status:To Do"
-2. Analizar resultados
-3. notion-create-pages: Crear página de resumen con links
-4. Retornar URL de la nueva página
+2. notion-fetch: Obtener detalles de cada página encontrada usando su page_id
+3. Analizar resultados
+4. notion-create-pages: Crear página de resumen con links
+5. Si algún paso falla, reportar: "Error en [herramienta MCP]: [mensaje de error]"
+6. Retornar URL de la nueva página solo si todo fue exitoso
 ```
 
 ### Ejemplo 2: Crear feature completo con GitHub
@@ -783,12 +835,17 @@ Agente:
 Usuario: "Implementa el endpoint de login según el ticket TASK-123 en Notion"
 
 Agente:
-1. notion-fetch: Obtener detalles de TASK-123
-2. Context7: Buscar docs de FastAPI y Argon2
-3. create_branch: feature/TASK-123-login-endpoint
-4. create_or_update_file: Múltiples archivos
-5. create_pull_request: Con referencia a TASK-123
-6. notion-update-page: Cambiar estado a "In Review"
+1. notion-search: Buscar "TASK-123" en Notion
+2. notion-fetch: Obtener detalles completos usando el page_id encontrado
+   - Si falla: "Error al obtener tarea de Notion: [mensaje]"
+3. Context7: Buscar docs de FastAPI y Argon2
+4. create_branch: feature/TASK-123-login-endpoint
+5. create_or_update_file: Múltiples archivos
+6. create_pull_request: Con referencia a TASK-123
+7. notion-update-page: Cambiar estado a "In Review" usando page_id
+   - Si falla: "Error al actualizar estado en Notion: [mensaje]"
+8. notion-create-comment: Agregar link al PR
+   - Si falla: "Error al crear comentario: [mensaje], pero PR fue creado exitosamente"
 ```
 
 ### Ejemplo 3: Code review con GitHub MCP
